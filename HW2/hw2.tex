@@ -1,0 +1,227 @@
+\documentclass[11pt]{article}
+\usepackage{enumerate}
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\thispagestyle{empty}
+\setlength{\parindent}{0cm}
+
+\setlength{\parskip}{0.3cm plus4mm minus3mm}
+
+\oddsidemargin = 0.0in
+\textwidth = 6.5 in
+\textheight = 9 in
+\headsep = 0in
+
+\lhead{John Rivera, riverj5@rpi.edu}
+
+\title{Database Systems, CSCI 4380-01 Fall 2018 \\
+Homework \# 2 Answers}
+\date{}
+\begin{document}
+\maketitle
+
+\vspace*{-0.7in}
+
+\noindent{\bf Homework Statement.} 
+
+\hspace*{0.1in} {\tt students(\underline{rin}, fname, lname, email, optin\_date, optout\_date)} \\
+\hspace*{0.1in} {\tt gradables(\underline{gid}, gytype, label, given\_date, due\_date, maxgrade, points, nextg\_id)}\\
+\hspace*{0.1in} {\tt grades(\underline{rin, gid}, submission\_date, grade)}
+
+
+{\bf Question 1.} Write the following queries using relational algebra
+using any operator that you wish:
+
+\begin{enumerate}[(a)]
+
+\item Return the RIN of all students who missed a homework that was
+  due during their opt-in period. Return the {\tt gid} of the
+  corresponding missed homeworks. Remember if there is no opt-out
+  date, all homeworks after opt-in date are required.
+
+\begin{eqnarray*}
+R1 & = & ((gradables \bowtie grades ) \bowtie students)\\
+HW & = & \sigma_{gtype='hw'} R1 \\
+Req\_HW & = & \sigma_{optin\_date \neq NULL  \mbox { and } optin\_date< due\_date \mbox { and } (optout\_date = NULL \mbox { or }  optout\_date > due\_date)} HW \\
+Answer & = & \pi_{rin, gid} (Req\_HW) - \pi_{rin, gid}(grades)\\
+\end{eqnarray*}
+  
+\item Find the RIN, first and last name of all students who had the
+  highest grades for an exam (i.e. gtype {\tt 'exam'} or {\tt
+    'finalexam'}). Also return the {\tt gid} and {\tt label} of the
+  exams they got the highest grades in.
+
+\begin{eqnarray*}
+exam\_grades & = & \pi_{rin, gid, grade}(\sigma_{gtype='exam'}(gradables\bowtie grades)) \\
+exam\_grades2[rin2, gid2,grade2] & = &exam\_grades \\
+Not\_max & = & \pi_{rin, gid, grade}(\sigma_{grade<grade2}\\
+&&(exam\_grades \bowtie_{rin=rin2, gid \neq gid2} exam\_grades2)) \\
+Max\_exam\_grades & = & exam\_grades - Not\_max \\
+Answer &=& \pi_{rin, fname, lname, gid, label}\\
+&&((Max\_exam\_grades \bowtie gradables) \bowtie students )
+\end{eqnarray*}
+
+\end{enumerate}
+
+\newpage
+
+{\bf Question 2.} For each of the following new relations:
+
+(1) list all the relevant functional dependencies based on the explanations below, \\
+(2) find all keys based on your functional dependencies, \\
+(3) discuss whether the relation is in BCNF (Boyce-Codd Normal Form) or not, explain why or why not. \\
+(4) discuss whether the relation is in 3NF (Boyce-Codd Normal Form) or not, explain why or why not.
+
+\begin{enumerate} [(a)]
+
+  \item The system keeps track of multiple submissions for the same
+  homework gradable like submitty in a relation called {\tt submissions}: 
+
+  {\tt submissions(gid, rin, filename, attemptno, submission\_datetime, isactive, totalruntime)} 
+
+  Each student, gradable and specific attempt corresponds to a
+  specific filename. Each filename corresponds to a specific student,
+  gradable and attempt. For each filename, there is a specific
+  submission\_datetime, isactive value and totalruntime value.
+\medskip
+
+(1) $\{ (rin,gid,attemptno\rightarrow filename), (filename \rightarrow rin,gid,attemptno), \\
+(filename\rightarrow submission\_datetime,isactive, totalruntime) \}$ \\
+(2) keys: (filename), (rin,gid, attemptno)\\ 
+(3) both (rin, gid, attemptno) and (filename) are superkeys, so relation is in BCNF \\
+(4) in BCNF, so in 3NF
+
+
+\item Homeworks, quizzes and exams have individual questions. We will
+  store the details of grades of each part separately using a
+  relation called {\tt grade\_details}:
+
+  {\tt grade\_details(rin, gid, partno, topic, maxpoints, pointsearned)}
+
+  For each gradable (gid) and part, there is a maxpoints value. For
+  each gradable, part and student, there is pointsearned. Each
+  gradable part may have multiple topics.
+\medskip
+
+(1)$\{ (gid,partno\rightarrow maxpoints), (gid,partno,rin \rightarrow pointsearned) \}$ \\
+(2) key: (gid, partno, rin, topic) \\
+(3) no super keys or trivial dependencies in functional dependencies listed in (1), so not in BCNF \\ 
+(4) (gid, partno) and (gid,partno, rin) are not superkeys and none of the f.d's are trivial. Neither maxpoints or pointsearned are prime attributes, so it is not in 3NF
+
+\end{enumerate}
+
+\newpage
+
+{\bf Question 3.} Given the following relation, functional
+dependencies and decomposition, answer the following questions:
+
+Relation $R(A,B,C,D,E,F)$ with ${\cal F}= \{AB\rightarrow F, BD\rightarrow C, CE\rightarrow F, F\rightarrow D \}$
+
+Decomposition: $R1(A,B,D)$, $R2(A,B,C,E)$, $R3(B,D,E,F)$
+
+\begin{enumerate}[(a)]
+
+\item Is this decomposition lossless? Show yes or no using Chase decomposition.
+
+
+\begin{tabular}{|l|l|l|l|l|l|}
+\hline
+A    & B & C    & D    & E    & F    \\ \hline
+a    & b & c1$\,\to\,$c & d    & e1 & f1 \\ \hline
+a    & b & c    & d2$\,\to\,$d & e    & f2$\,\to\,$f1$\,\to\,$f \\ \hline
+a3 & b & c3$\,\to\,$c1$\,\to\,$c & d    & e    & f    \\ \hline
+\end{tabular}
+\medskip
+\\
+Steps: \\
+AB$\,\to\,$F, f2$\,\to\,$f1\\
+BD$\,\to\,$C, c3 $\,\to\,$c1\\
+CE$\,\to\,$F\\
+F$\,\to\,$D, d2$\,\to\,$d\\
+BD$\,\to\,$C, c1$\,\to\,$c\\
+CE$\,\to\,$F, f1$\,\to\,$f
+
+
+\item Is this decomposition dependency preserving? Show your work.
+
+Note: two show that two sets of functional dependencies, $F_1$ and
+$F_2$ are equivalent, it is sufficient to show that (1) all functional
+dependencies in $F_1$ are implied by $F_2$, and (2) all all functional
+dependencies in $F_2$ are implied by $F_1$.
+
+\begin{tabular}{ll}
+R1(A,B,D) & \{AB$\,\to\,$D\}=$F_1$ \\
+R2(A,B,C,E) & \{AB$\,\to\,$C\}=$F_2$ \\
+R3(B,D,E,F) & \{F$\,\to\,$D\}=$F_3$
+\end{tabular}
+
+\begin{eqnarray*}
+F_1 \cup F_2 \cup F_3 = \{AB \rightarrow D, AB \rightarrow C, F \rightarrow D\}
+\end{eqnarray*}
+
+$F_1$ $\cup$ $F_2$ $\cup$ $F_3$ does not imply CE $\,\to\,$ F, so not dependency preserving
+
+
+  
+\end{enumerate}
+
+\newpage
+
+{\bf Question 4.} Given the following relation, use BCNF decomposition
+to convert it to relations in BCNF.
+
+$R(A,B,C,D,E)$ ${\cal F}=\{AB\rightarrow C, C\rightarrow E\}$
+\\ \\ \\
+Step 1:\\
+\medskip
+use AB$\,\to\,$C \ \ \ \  AB\textsuperscript{+}= \{A, B, C, E\} \\
+R1(A, B, C, E) \ \ \ \ \{AB$\,\to\,$C, C$\,\to\,$E\} \ \ \ \ key:AB $\,\to\,$ Not in BCNF due to C$\,\to\,$E \\
+R2(A, B, D) \ \ \ \ \ \ \ \ \{\}  \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \  key:ABD$\,\to\,$ in BCNF \\
+
+Step 2:\\
+\medskip
+C$\,\to\,$E \ \ \ \  C\textsuperscript{+}= \{C, E\} \\
+R11(C,E) \ \ \ \ \ \ \ \ \ \ \{C$\,\to\,$E\} \ \ \ \ \ key:C $\,\to\,$ in BCNF\\
+R12(A, B, C) \ \ \ \ \{AB$\,\to\,$C\} \ \ \ \ key:AB $\,\to\,$ in BCNF\\
+\\ \\
+So after BCNF decomposition, we have\\
+R2(A, B, D) \\ 
+R11(C,E) \\
+R12(A, B, C)
+
+
+\newpage
+
+{\bf Question 5.} Given the following relation, use 3NF decomposition
+to convert it to relations in 3NF. For each resulting relation, check
+if it is also in BCNF.
+
+$R(A,B,C,D,E,F,G)$ ${\cal F}=\{AB\rightarrow C, CD\rightarrow EF, CF\rightarrow AG \}$
+\\ \\
+
+R1(A, B, C) \ \ \ \ \ \ \ \ \ \ \ \ \ \{AB $\,\to\,$ C\} \ \ \ \ \ \ \ \ \ in BCNF (AB is key)\\
+\\
+R2(C, D, E, F)  \ \ \ \ \ \ \ \ \  \{CD $\,\to\,$ EF\} \ \ \ \ \ \ \ \ \ in BCNF (CD is key)\\
+\\
+R3(C, F, A, G) \ \ \ \ \ \ \ \ \ \{CF $\,\to\,$ AG\} \ \ \ \ \ \ \ \ \ in BCNF (CF is key)\\
+\\
+There is no relation with all attributes of a key, so add one\\
+\\
+R4(A, B, D) \ \ \ \ \ \ \ \ \ \{\} in BCNF \\
+\\
+
+{\bf SUBMISSION INSTRUCTIONS.} Submit a PDF document for this homework
+using Gradescope. No other format and no hand written homeworks
+please. No late submissions will be allowed.
+
+The gradescope for homework submissions will become available by
+Tuesday September 18 the latest. 
+
+
+\end{document}
+
+
+
+         
+\end{document}
+

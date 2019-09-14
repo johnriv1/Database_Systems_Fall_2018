@@ -1,0 +1,151 @@
+\documentclass[11pt]{article}
+\usepackage{enumerate}
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\thispagestyle{empty}
+\setlength{\parindent}{0cm}
+
+\setlength{\parskip}{0.3cm plus4mm minus3mm}
+
+\oddsidemargin = 0.0in
+\textwidth = 6.5 in
+\textheight = 9 in
+\headsep = 0in
+
+\lhead{John Rivera - riverj5@rpi.edu}
+
+\title{Database Systems, CSCI 4380-01 Fall 2018 \\
+Homework \# 1 Answers}
+\date{}
+\begin{document}
+\maketitle
+
+\vspace*{-0.7in}
+
+\noindent{\bf Homework Statement.} 
+{\bf Question 1.} The following queries only need a single SELECT
+($\sigma$), followed by a PROJECT ($\pi$) and RENAMING
+($\rho$) as necessary:
+
+\begin{enumerate}  [(a)]
+\item Return the first and last name of all students who have opted in
+  to the homeworks before {\tt '9/25/2018'} and did not opt out.
+
+\begin{eqnarray*}
+Answer & = & \pi_{fname, lname} (\sigma_{optin\_date<9/25/2018 \mbox{ and } output\_date = NULL} Students)
+\end{eqnarray*}
+
+\item Return the id and points for all homeworks that are due before
+  {\tt 'Exam', 2}.
+
+\begin{eqnarray*}
+Answer & = & \pi_{id, points} (\sigma_{nextexam\_name = 'Exam'  \mbox{ and } nextexam\_id = 2} hws)
+\end{eqnarray*}
+  
+\end{enumerate}
+
+\newpage
+
+{\bf Question 2.} The following queries combine SELECT ($\sigma$), SET
+operations ($\cap,\cup,-$), PROJECTION ($\pi$) and RENAMING
+($\rho$) as necessary:
+
+\begin{enumerate} [(a)]
+\item Find and return the name, id and points of all exams and homeworks
+  given or had due dates before '11/22/2018'.
+
+\begin{eqnarray*}
+Exam & = & \pi_{name,id, points} (\sigma_{exam\_date < 11/22/2018 } exams) \\
+\end{eqnarray*}
+\#For the HW, we consider only the given date due to it always being before the due date
+\begin{eqnarray*}
+HW & = & \pi_{name,id, points} (\sigma_{given\_date < 11/22/2018 } hws) \\
+Answer & = & Exam \cup HW
+\end{eqnarray*}
+
+\item Find the id of homeworks that no student has submitted.
+
+\#Assuming that hwgrades only contains hw that has been submitted:
+
+\begin{eqnarray*}
+hw\_submitted\_id & = & \pi_{id} (hwgrades) \\
+all\_hw\_id & = & \pi_{id} (hws) \\
+Answer & = & all\_hw\_id - hw\_submitted\_id
+\end{eqnarray*}
+
+\item Find and return the RIN of all students who turned in both
+  homeworks 1 and 2.
+  
+\begin{eqnarray*}
+hw1\_students & = & \pi_{rin} (\sigma_{id=1} hwgrades) \\
+hw2\_students & = & \pi_{rin} (\sigma_{id=2} hwgrades) \\
+Answer & = & hw1\_students \cap hw2\_students
+\end{eqnarray*}
+
+\end{enumerate}
+\newpage
+
+{\bf Question 3.} The following queries combine SELECT ($\sigma$)
+statements with any number of JOINS as neede ($\bowtie$, theta or
+natural) (or CARTESIAN PRODUCT), followed by a PROJECT ($\pi$) and
+RENAMING ($\rho$) as necessary:
+
+\begin{enumerate} [(a)]
+\item Find the first and last name of all students who submitted
+  homework \#1.
+
+\begin{eqnarray*}
+Answer & = & \pi_{fname, lname} (\sigma_{id=1 } (students \bowtie hwgrades) )
+\end{eqnarray*}
+
+\item Find the RIN and Exam 1 grades of all students who submitted at
+  least one homework due before Exam 1.
+
+\begin{eqnarray*}
+hws\_due\_before\_exam1 & = & \sigma_{nextexam\_name = 'Exam' \mbox{ and } nextexam\_id=1} (hws) \\
+R1 & = & \pi_{rin} (hws\_due\_before\_exam1 \bowtie hwgrades)
+\end{eqnarray*}
+R1 is rin of all students who submitted at least 1 HW due before Exam 1
+\begin{eqnarray*}
+Answer & = & \pi_{rin, grade} (\sigma_{ name = 'Exam' \mbox{ and } id=1} (R1 \bowtie examgrades))
+\end{eqnarray*}
+
+\end{enumerate}
+\newpage
+
+{\bf Question 4.} Freeform, you decide which combination is
+needed. Any relational algebra operator is fine. Remember to construct
+these in parts and provide comments on what each part is computing. This will make
+it possible for us to give partial credit.
+
+\begin{enumerate} [(a)]
+\item For each student, return their RIN, name, id, grade and points
+  for all exams and homeworks that they have a grade for.
+
+\begin{eqnarray*}
+HW & = & hws \bowtie hwgrades \\
+EX & = & exams \bowtie examgrades \\
+HW\_Exams & = &  (\pi_{rin, name, id, grade, points} (HW)) \cup (\pi_{rin, name, id, grade, points}(EX)) \\
+Stud\_HW\_Exams & = & ( students \bowtie HW\_Exams) \\
+Answer & = & \pi_{rin, fname, lname, name, id, grade, points} ( \sigma_{ grade \neq NULL } (Stud\_HW\_Exams) )
+\end{eqnarray*}
+
+\item Find and return the RIN and Exam 1 grade of the students who did
+  not complete any of the homeworks before Exam 1.
+
+\begin{eqnarray*}
+hws\_due\_before\_exam1 & = & \sigma_{nextexam\_name = 'Exam' \mbox{ and } nextexam\_id=1} (hws) \\
+R1 & = & \pi_{rin}  (hws\_due\_before\_exam1 \bowtie hwgrades) \\
+R2 & = & \pi_{rin, grade} (\sigma_{ name = 'Exam' \mbox{ and } id=1} (R1 \bowtie examgrades))
+\end{eqnarray*}
+\\R2 is the same as the answer in Question 3b (RIN and Exam 1 Grade of all students who submitted at least 1 hw due before exam 1). The only students who don't fall under this are the ones who did not submit any of the homeworks before Exam 1. So we take the difference. 
+
+\begin{eqnarray*}
+R1 & = & \pi_{rin, grade} (\sigma_{name='Exam' \mbox{ and } id= 1} (examgrades))-R2 \\
+\end{eqnarray*}
+
+
+\end{enumerate}
+
+\end{document}
+
